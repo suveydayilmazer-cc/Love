@@ -23,23 +23,21 @@
 
         .container {
             position: relative;
-            /* Kalbin ekrandaki genel boyut alanı */
-            width: 400px;
-            height: 400px; 
+            width: 600px;
+            height: 600px; 
         }
 
         .word {
             position: absolute;
             color: #ff1a40; /* Canlı kırmızı tonu */
-            font-weight: bold;
-            opacity: 0; /* Başlangıçta görünmez */
-            transform: scale(0);
-            transition: opacity 0.4s ease, transform 0.4s ease;
-            text-shadow: 0 0 10px rgba(255, 26, 64, 0.6); /* Hafif neon parıltısı */
+            font-weight: 600;
+            opacity: 0;
+            transform: scale(0.2);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            text-shadow: 0 0 8px rgba(255, 26, 64, 0.5);
             white-space: nowrap;
         }
 
-        /* Yazıların ekranda belirdiği andaki sınıfı */
         .word.visible {
             opacity: 1;
             transform: scale(1);
@@ -51,80 +49,84 @@
     <div class="container" id="heart-container"></div>
 
     <script>
-        // Farklı dillerde "Seni seviyorum" kelimeleri
         const languages = [
             "Seni Seviyorum", "I Love You", "Te amo", "Je t'aime", 
             "Ich liebe dich", "Ti amo", "Я тебя люблю", "Te quiero", 
-            "Seni Yรัก", "Kocham Cię", "Seni Seviyorum", "Mahal kita", 
-            "Minä rakastan sinua", "Jeg elsker dig", "Σ' αγapώ", "Volim te", 
-            "Szeretlek", "Te dua", "Ik hou van jou", "Milujem ťa"
+            "Kocham Cię", "Mahal kita", "Minä rakastan sinua", "Jeg elsker dig", 
+            "Σ' αγαπώ", "Volim te", "Szeretlek", "Te dua", "Ik hou van jou", "Milujem ťa"
         ];
 
         const container = document.getElementById('heart-container');
-        const totalWords = 80; // Kalbi oluşturacak toplam kelime adresi
-
-        // Matematiksel Kalp Formülü (Parametrik Denklem) kullanarak koordinatları hesaplama
-        const points = [];
-        for (let i = 0; i < totalWords; i++) {
-            // 0 ile 2*PI arasında açı
-            const t = (i / totalWords) * Math.PI * 2;
-            
-            // Kalp denklemi
-            const x = 16 * Math.pow(Math.sin(t), 3);
-            const y = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
-            
-            points.push({ x, y });
-        }
-
-        // Kelimeleri DOM'a yerleştirme ve koordinatları ayarlama
         const wordElements = [];
 
-        points.forEach((p, index) => {
+        // 1. Çerçeve (Kontur) için noktalar
+        const borderPointsCount = 100;
+        const borderPoints = [];
+        for (let i = 0; i < borderPointsCount; i++) {
+            const t = (i / borderPointsCount) * Math.PI * 2;
+            const x = 16 * Math.pow(Math.sin(t), 3);
+            const y = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+            borderPoints.push({ x, y, type: 'border', originalIndex: i });
+        }
+
+        // 2. İç kısım için noktalar (Yukarıdan aşağı dolması için Y koordinatına göre sıralayacağız)
+        const innerPoints = [];
+        for (let x = -13; x <= 13; x += 1.8) {
+            for (let y = -14; y <= 11; y += 1.8) {
+                // Kalbin içinde olup olmadığını kontrol eden matematiksel formül
+                const eq = Math.pow(x/2.2, 2) + Math.pow(y/2.2, 2) - 1;
+                // Yaklaşık kalp içi sınır kontrolü
+                if (Math.pow(x/3, 2) + Math.pow(y/3, 2) - 1 < 3.5) {
+                    // Çerçeveye çok yakın olmayanları alalım ki üst üste binmesinler
+                    const checkDist = borderPoints.some(p => Math.hypot(p.x - x, p.y - y) < 1.5);
+                    if (!checkDist) {
+                        innerPoints.push({ x, y, type: 'inner' });
+                    }
+                }
+            }
+        }
+
+        // İç kısımdaki noktaları yukarıdan aşağıya (Y eksenine göre küçükten büyüğe) sıralıyoruz
+        innerPoints.sort((a, b) => a.y - b.y);
+
+        // Hepsini birleştiriyoruz: Önce çevre, sonra yukarıdan aşağıya iç kısım
+        const allPoints = [...borderPoints, ...innerPoints];
+
+        // Noktaları ekrana basma
+        allPoints.forEach((p, index) => {
             const span = document.createElement('span');
             span.classList.add('word');
-            
-            // Diziden sırayla veya rastgele dil seçimi (döngüsel olarak)
             span.innerText = languages[index % languages.length];
             
-            // Mobilde ve masaüstünde düzgün durması için ölçekleme ve merkezleme
-            // Kalp koordinatlarını container merkezine (200px, 200px) taşıyoruz
-            const posX = 200 + p.x * 11; 
-            const posY = 200 + p.y * 11;
+            // Genişliği artırarak sıkışmayı önledik (18 kat sayısı ile)
+            const posX = 300 + p.x * 18; 
+            const posY = 300 + p.y * 18;
             
-            // Font boyutunu kalp hatlarına göre biraz çeşitlendirelim
-            const fontSize = Math.floor(Math.random() * 4) + 11; // 11px - 14px arası
-            span.style.fontSize = fontSize + 'px';
-
+            span.style.fontSize = '12px';
             span.style.left = posX + 'px';
             span.style.top = posY + 'px';
 
             container.appendChild(span);
-            wordElements.push(span);
+            wordElements.push({ element: span, type: p.type });
         });
 
-        // Animasyon: Yazıların sırayla ekranda belirmesi
+        // Animasyon Sıralaması: Önce çerçeve, sonra iç kısım
         let currentIndex = 0;
-        function showNextWord() {
+
+        function animateHeart() {
             if (currentIndex < wordElements.length) {
-                wordElements[currentIndex].classList.add('visible');
+                wordElements[currentIndex].element.classList.add('visible');
                 currentIndex++;
-                // Her kelimenin gelme hızı (milisaniye cinsinden, küçültürsen hızlanır)
-                setTimeout(showNextWord, 60); 
-            } else {
-                // Kalp tamamen belirdikten sonra baştan başlatmak istersen burayı açabilirsin:
-                // setTimeout(resetAnimation, 3000);
+                
+                // Çerçeve çizilirken biraz daha hızlı, iç kısım dolarken akıcı bir hız
+                let speed = 25;
+                setTimeout(animateHeart, speed);
             }
         }
 
-        function resetAnimation() {
-            wordElements.forEach(el => el.classList.remove('visible'));
-            currentIndex = 0;
-            setTimeout(showNextWord, 500);
-        }
-
-        // Sayfa yüklendikten kısa bir süre sonra animasyonu başlat
+        // Sayfa açıldıktan kısa süre sonra başlat
         window.onload = () => {
-            setTimeout(showNextWord, 500);
+            setTimeout(animateHeart, 400);
         };
     </script>
 
