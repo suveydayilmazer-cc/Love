@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalp Animasyonu</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container {
+            position: relative;
+            /* Kalbin ekrandaki genel boyut alanı */
+            width: 400px;
+            height: 400px; 
+        }
+
+        .word {
+            position: absolute;
+            color: #ff1a40; /* Canlı kırmızı tonu */
+            font-weight: bold;
+            opacity: 0; /* Başlangıçta görünmez */
+            transform: scale(0);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            text-shadow: 0 0 10px rgba(255, 26, 64, 0.6); /* Hafif neon parıltısı */
+            white-space: nowrap;
+        }
+
+        /* Yazıların ekranda belirdiği andaki sınıfı */
+        .word.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="heart-container"></div>
+
+    <script>
+        // Farklı dillerde "Seni seviyorum" kelimeleri
+        const languages = [
+            "Seni Seviyorum", "I Love You", "Te amo", "Je t'aime", 
+            "Ich liebe dich", "Ti amo", "Я тебя люблю", "Te quiero", 
+            "Seni Yรัก", "Kocham Cię", "Seni Seviyorum", "Mahal kita", 
+            "Minä rakastan sinua", "Jeg elsker dig", "Σ' αγapώ", "Volim te", 
+            "Szeretlek", "Te dua", "Ik hou van jou", "Milujem ťa"
+        ];
+
+        const container = document.getElementById('heart-container');
+        const totalWords = 80; // Kalbi oluşturacak toplam kelime adresi
+
+        // Matematiksel Kalp Formülü (Parametrik Denklem) kullanarak koordinatları hesaplama
+        const points = [];
+        for (let i = 0; i < totalWords; i++) {
+            // 0 ile 2*PI arasında açı
+            const t = (i / totalWords) * Math.PI * 2;
+            
+            // Kalp denklemi
+            const x = 16 * Math.pow(Math.sin(t), 3);
+            const y = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+            
+            points.push({ x, y });
+        }
+
+        // Kelimeleri DOM'a yerleştirme ve koordinatları ayarlama
+        const wordElements = [];
+
+        points.forEach((p, index) => {
+            const span = document.createElement('span');
+            span.classList.add('word');
+            
+            // Diziden sırayla veya rastgele dil seçimi (döngüsel olarak)
+            span.innerText = languages[index % languages.length];
+            
+            // Mobilde ve masaüstünde düzgün durması için ölçekleme ve merkezleme
+            // Kalp koordinatlarını container merkezine (200px, 200px) taşıyoruz
+            const posX = 200 + p.x * 11; 
+            const posY = 200 + p.y * 11;
+            
+            // Font boyutunu kalp hatlarına göre biraz çeşitlendirelim
+            const fontSize = Math.floor(Math.random() * 4) + 11; // 11px - 14px arası
+            span.style.fontSize = fontSize + 'px';
+
+            span.style.left = posX + 'px';
+            span.style.top = posY + 'px';
+
+            container.appendChild(span);
+            wordElements.push(span);
+        });
+
+        // Animasyon: Yazıların sırayla ekranda belirmesi
+        let currentIndex = 0;
+        function showNextWord() {
+            if (currentIndex < wordElements.length) {
+                wordElements[currentIndex].classList.add('visible');
+                currentIndex++;
+                // Her kelimenin gelme hızı (milisaniye cinsinden, küçültürsen hızlanır)
+                setTimeout(showNextWord, 60); 
+            } else {
+                // Kalp tamamen belirdikten sonra baştan başlatmak istersen burayı açabilirsin:
+                // setTimeout(resetAnimation, 3000);
+            }
+        }
+
+        function resetAnimation() {
+            wordElements.forEach(el => el.classList.remove('visible'));
+            currentIndex = 0;
+            setTimeout(showNextWord, 500);
+        }
+
+        // Sayfa yüklendikten kısa bir süre sonra animasyonu başlat
+        window.onload = () => {
+            setTimeout(showNextWord, 500);
+        };
+    </script>
+
+</body>
+</html>
